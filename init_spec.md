@@ -186,8 +186,8 @@ Append-only file. Orchestrator appends decisions as they arise. Human can option
 - **CLI framework:** `click`
 - **File locking:** `filelock` (cross-platform)
 - **LLM calls:** `openai` Python package
-- **Orchestrator model:** OpenAI Codex (via `OPENAI_API_KEY`)
-- **Executor model:** GPT-4o-mini (via same key)
+- **Orchestrator model:** W&B Inference (via `WANDB_API_KEY`)
+- **Executor model:** W&B Inference (via same key)
 - **Web viewer:** Single HTML file with Mermaid.js
 - **Package:** pip-installable via `pyproject.toml`
 
@@ -498,15 +498,17 @@ import openai
 import os
 
 # IMPORTANT: "codex" is NOT a real OpenAI model name.
-# Default to gpt-4o for now. Update MERDAG_CODEX_MODEL env var
-# to the hackathon-provided Codex model name when available.
-CODEX_MODEL = os.getenv("MERDAG_CODEX_MODEL", "gpt-4o")
-FAST_MODEL = os.getenv("MERDAG_FAST_MODEL", "gpt-4o-mini")
+# W&B Inference — OpenAI-compatible endpoint
+CODEX_MODEL = os.getenv("MERDAG_CODEX_MODEL", "meta-llama/Llama-4-Scout-17B-16E-Instruct")
+FAST_MODEL = os.getenv("MERDAG_FAST_MODEL", "meta-llama/Llama-4-Scout-17B-16E-Instruct")
 
 def call_llm(tier: str, system_prompt: str, user_prompt: str) -> dict:
     """Returns {"response": str, "model": str, "tokens_in": int, "tokens_out": int}"""
     model = CODEX_MODEL if tier in ("codex", "human") else FAST_MODEL
-    client = openai.OpenAI()  # uses OPENAI_API_KEY env var
+    client = openai.OpenAI(
+        api_key=os.environ["WANDB_API_KEY"],
+        base_url="https://api.wandb.ai/v1",
+    )
     resp = client.chat.completions.create(
         model=model,
         messages=[
@@ -598,7 +600,7 @@ Result: <truncated response>
   "total_steps": N,
   "total_tokens_in": N,
   "total_tokens_out": N,
-  "models_used": {"codex": N, "gpt-4o-mini": N},
+  "models_used": {"meta-llama/Llama-4-Scout-17B-16E-Instruct": N},
   "nodes_completed": N,
   "nodes_failed": N,
   "decisions_made": N
@@ -611,7 +613,7 @@ Result: <truncated response>
 **Done when:** This works end-to-end:
 
 ```bash
-export OPENAI_API_KEY=sk-...
+export WANDB_API_KEY=wandb_v1_...
 merdag simulate "Launch a social media marketing campaign for a new coffee brand"
 # Prints evolving diagram at each step
 # Ends with summary JSON
@@ -776,9 +778,9 @@ merdag/
 ## Environment Variables
 
 ```jsx
-OPENAI_API_KEY=sk-...          # Required for Stage 3+
-MERDAG_CODEX_MODEL=gpt-4o      # Default orchestrator (update to hackathon Codex model when available)
-MERDAG_FAST_MODEL=gpt-4o-mini  # Default executor model
+WANDB_API_KEY=wandb_v1_...     # Required for Stage 3+
+MERDAG_CODEX_MODEL=meta-llama/Llama-4-Scout-17B-16E-Instruct  # Default orchestrator
+MERDAG_FAST_MODEL=meta-llama/Llama-4-Scout-17B-16E-Instruct   # Default executor model
 MERDAG_PORT=8000               # Default port for serve
 ```
 

@@ -91,7 +91,7 @@ Supported Mermaid primitives are intentionally limited to `graph TD`, rectangle 
 
 ## Simulation
 
-To run the Codex-powered execution loop, set `OPENAI_API_KEY` and optionally override the default models with `MERDAG_CODEX_MODEL` or `MERDAG_FAST_MODEL`.
+To run the simulation loop, set `WANDB_API_KEY` and optionally override the default models with `MERDAG_CODEX_MODEL` or `MERDAG_FAST_MODEL`.
 
 ```bash
 merdag simulate "Launch a social media marketing campaign for a new coffee brand"

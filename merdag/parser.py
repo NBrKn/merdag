@@ -27,8 +27,8 @@ TIER_SUFFIX = {
 }
 TASK_NODE_RE = re.compile(r"([A-Za-z0-9_]+)\[(.+?)\]")
 DECISION_NODE_RE = re.compile(r"([A-Za-z0-9_]+)\{(.+?)\}")
-LABELED_EDGE_RE = re.compile(r"([A-Za-z0-9_]+)\s*-->\|(.+?)\|\s*([A-Za-z0-9_]+)")
-PLAIN_EDGE_RE = re.compile(r"([A-Za-z0-9_]+)\s*-->\s*([A-Za-z0-9_]+)")
+LABELED_EDGE_RE = re.compile(r"([A-Za-z0-9_]+)\s*-->\|(.+?)\|\s*(?=([A-Za-z0-9_]+))")
+PLAIN_EDGE_RE = re.compile(r"([A-Za-z0-9_]+)\s*-->\s*(?=([A-Za-z0-9_]+))" )
 COMMENT_RE = re.compile(r"^\s*%%\s*(.+)$")
 AGENT_RE = re.compile(r"agent:(\S+)")
 DECISION_TYPE_RE = re.compile(r"^\s*([🤖🧑])\s*")
@@ -90,11 +90,15 @@ def parse_plan_text(raw: str) -> Plan:
             if node_id not in nodes:
                 nodes[node_id] = _parse_node(node_id, raw_label, "decision")
 
-        for labeled_edge in LABELED_EDGE_RE.finditer(line):
+        line_for_edges = line
+        line_for_edges = TASK_NODE_RE.sub(r"\1", line_for_edges)
+        line_for_edges = DECISION_NODE_RE.sub(r"\1", line_for_edges)
+
+        for labeled_edge in LABELED_EDGE_RE.finditer(line_for_edges):
             source, label, target = labeled_edge.groups()
             edges.append(Edge(source=source, target=target, label=label.strip()))
 
-        for plain_edge in PLAIN_EDGE_RE.finditer(line):
+        for plain_edge in PLAIN_EDGE_RE.finditer(line_for_edges):
             source, target = plain_edge.groups()
             edges.append(Edge(source=source, target=target, label=None))
 
@@ -126,11 +130,53 @@ def outgoing_edges(plan: Plan) -> dict[str, list[Edge]]:
     return outgoing
 
 
+def get_back_edges(plan: Plan) -> set[tuple[str, str]]:
+    outgoing = outgoing_edges(plan)
+    visited = set()
+    visiting = set()
+    back_edges = set()
+
+    def dfs(node_id: str):
+        visited.add(node_id)
+        visiting.add(node_id)
+        for edge in outgoing.get(node_id, []):
+            if edge.target in visiting:
+                back_edges.add((edge.source, edge.target))
+            elif edge.target not in visited:
+                dfs(edge.target)
+        visiting.remove(node_id)
+
+    incoming = incoming_edges(plan)
+    roots = [n for n in plan.nodes if not incoming.get(n)]
+    if not roots and plan.nodes:
+        roots = [next(iter(plan.nodes))]
+
+    for root in sorted(roots):
+        if root not in visited:
+            dfs(root)
+
+    for node_id in sorted(plan.nodes):
+        if node_id not in visited:
+            dfs(node_id)
+
+    return back_edges
+
+
 def dependencies_met(plan: Plan, node_id: str) -> bool:
-    for edge in incoming_edges(plan).get(node_id, []):
+    incoming = incoming_edges(plan).get(node_id, [])
+    if not incoming:
+        return True
+
+    back_edges = get_back_edges(plan)
+
+    for edge in incoming:
+        if (edge.source, edge.target) in back_edges:
+            continue
+
         upstream = plan.nodes.get(edge.source)
         if upstream is None or upstream.status != "done":
             return False
+            
     return True
 
 
@@ -138,6 +184,7 @@ def reachable_nodes(plan: Plan, start_ids: list[str] | set[str] | tuple[str, ...
     outgoing = outgoing_edges(plan)
     stack = list(start_ids)
     visited: set[str] = set()
+    back_edges = get_back_edges(plan)
 
     while stack:
         node_id = stack.pop()
@@ -145,7 +192,8 @@ def reachable_nodes(plan: Plan, start_ids: list[str] | set[str] | tuple[str, ...
             continue
         visited.add(node_id)
         for edge in outgoing.get(node_id, []):
-            stack.append(edge.target)
+            if (edge.source, edge.target) not in back_edges:
+                stack.append(edge.target)
 
     return visited
 

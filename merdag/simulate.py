@@ -118,7 +118,8 @@ def run_simulation(
                 if node.status in {"waiting", "pending_decision"}
             ]
             if remaining:
-                raise RuntimeError(f"Simulation stalled with blocked nodes: {', '.join(sorted(remaining))}")
+                debug_info = ", ".join(f"{k}:{v.status}" for k, v in plan.nodes.items())
+                raise RuntimeError(f"Simulation stalled with blocked nodes: {', '.join(sorted(remaining))}. Statuses: {debug_info}")
             break
 
         steps += 1

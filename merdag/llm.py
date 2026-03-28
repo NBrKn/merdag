@@ -4,20 +4,23 @@ import os
 
 
 def codex_model() -> str:
-    return os.getenv("MERDAG_CODEX_MODEL", "gpt-4o")
+    return os.getenv("MERDAG_CODEX_MODEL", "meta-llama/Llama-4-Scout-17B-16E-Instruct")
 
 
 def fast_model() -> str:
-    return os.getenv("MERDAG_FAST_MODEL", "gpt-4o-mini")
+    return os.getenv("MERDAG_FAST_MODEL", "meta-llama/Llama-4-Scout-17B-16E-Instruct")
 
 
 def call_llm(tier: str, system_prompt: str, user_prompt: str) -> dict[str, int | str]:
-    """Call the OpenAI Chat Completions API for a merdag execution step."""
+    """Call the W&B Inference API (OpenAI-compatible) for a merdag execution step."""
 
     import openai
 
     model = codex_model() if tier in {"codex", "human"} else fast_model()
-    client = openai.OpenAI()
+    client = openai.OpenAI(
+        api_key=os.environ["WANDB_API_KEY"],
+        base_url="https://api.wandb.ai/v1",
+    )
     response = client.chat.completions.create(
         model=model,
         messages=[

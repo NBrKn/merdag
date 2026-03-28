@@ -14,7 +14,7 @@ from merdag.simulate import PLAN_GENERATION_SYSTEM_PROMPT, run_simulation
 
 
 def fake_llm(tier: str, system_prompt: str, user_prompt: str) -> dict[str, int | str]:
-    model = "gpt-4o" if tier in {"codex", "human"} else "gpt-4o-mini"
+    model = "meta-llama/Llama-4-Scout-17B-16E-Instruct" if tier in {"codex", "human"} else "meta-llama/Llama-4-Scout-17B-16E-Instruct-mini"
 
     if system_prompt == PLAN_GENERATION_SYSTEM_PROMPT:
         return {
@@ -99,7 +99,7 @@ class Stage3SimulationTests(unittest.TestCase):
 
         self.assertEqual(summary["status"], "complete")
         self.assertEqual(summary["total_steps"], 7)
-        self.assertEqual(summary["models_used"], {"gpt-4o": 5, "gpt-4o-mini": 3})
+        self.assertEqual(summary["models_used"], {"meta-llama/Llama-4-Scout-17B-16E-Instruct": 5, "meta-llama/Llama-4-Scout-17B-16E-Instruct-mini": 3})
         self.assertEqual(summary["nodes_completed"], 5)
         self.assertEqual(summary["nodes_failed"], 2)
         self.assertEqual(summary["decisions_made"], 2)

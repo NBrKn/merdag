@@ -149,12 +149,12 @@ The Ralph Loop is an autonomous AI coding pattern (named after Ralph Wiggum) whe
 
 | Env Variable | Default | Purpose |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | (required) | API authentication |
-| `MERDAG_CODEX_MODEL` | `gpt-4o` | Orchestrator model — update to hackathon Codex model when available |
-| `MERDAG_FAST_MODEL` | `gpt-4o-mini` | Executor model for cheap tasks |
+| `WANDB_API_KEY` | (required) | API authentication (W&B Inference) |
+| `MERDAG_CODEX_MODEL` | `meta-llama/Llama-4-Scout-17B-16E-Instruct` | Orchestrator model (W&B Inference) |
+| `MERDAG_FAST_MODEL` | `meta-llama/Llama-4-Scout-17B-16E-Instruct` | Executor model (W&B Inference) |
 | `MERDAG_PORT` | `8000` | Web viewer port |
 
-**Important:** `codex` is NOT a real OpenAI model name. The spec defaults to `gpt-4o`. Update the env var when the hackathon provides the actual Codex model name.
+**Important:** Inference is now via W&B Inference API (OpenAI-compatible). Default model is `meta-llama/Llama-4-Scout-17B-16E-Instruct`.
 
 ---
 
