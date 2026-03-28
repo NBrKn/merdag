@@ -110,6 +110,19 @@ merdag status --human
 
 `merdag serve` hosts a dark-theme Mermaid viewer at `http://localhost:8000` by default, or `MERDAG_PORT` if set. The page refreshes `plan.mermaid` and `decisions.md` every 2 seconds so browser output stays in sync with CLI updates.
 
+## Record a demo
+
+To capture a clean `.webm` of the live graph updating in real time, use the Playwright recorder script in the repo root.
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install playwright
+.\.venv\Scripts\python.exe -m playwright install chromium
+$env:WANDB_API_KEY = "<your-api-key>"
+.\.venv\Scripts\python.exe .\record_demo.py
+```
+
+The script starts `python -m merdag serve`, records the viewer at `1280x720`, and uses `python -m merdag simulate` with the coffee-brand prompt when `WANDB_API_KEY` is set. If no API key is present, it falls back to a deterministic local walkthrough so you can still generate `recordings/merdag_demo.webm` without network access. In both modes it copies the generated demo plan and decisions into `recordings/` and restores any existing root-level `plan.mermaid` and `decisions.md` after the run.
+
 ## For agents
 
 Agent-facing usage is documented in `SKILL.md`.

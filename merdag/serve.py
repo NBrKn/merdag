@@ -169,18 +169,11 @@ VIEWER_HTML = """<!doctype html>
 
     async function renderPlan(newContent) {
       diagramCounter += 1;
-      const oldSvg = diagramHost.querySelector('svg');
-      if (oldSvg) {
-        oldSvg.remove();
-      }
       diagramHost.innerHTML = '';
 
-      const target = document.createElement('div');
-      target.id = 'diagram-' + diagramCounter;
-      diagramHost.appendChild(target);
-
-      const renderResult = await mermaid.render(target.id, newContent);
-      target.innerHTML = renderResult.svg;
+      const renderId = 'diagram-' + diagramCounter;
+      const renderResult = await mermaid.render(renderId, newContent);
+      diagramHost.innerHTML = renderResult.svg;
     }
 
     async function refresh() {

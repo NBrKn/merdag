@@ -58,7 +58,7 @@ class Stage5HumanTests(unittest.TestCase):
         self.assertIn("grid-template-columns: 7fr 3fr", html)
         self.assertIn("merdag — Live Plan Viewer", html)
         self.assertIn("setInterval(refresh, 2000)", html)
-        self.assertIn("mermaid.render(target.id, newContent)", html)
+        self.assertIn("mermaid.render(renderId, newContent)", html)
         self.assertIn("lastPlanText = null;", html)
         self.assertIn("lastDecisionsText = null;", html)
         self.assertNotIn("mermaid.init()", html)
