@@ -11,12 +11,13 @@ This spec is designed to be executed in a **Ralph Loop** — an autonomous itera
 **Key rules for the agent:**
 
 1. **Re-read this spec and `progress.md` at the start of every iteration.** Do not rely on conversation memory.
-2. **Maintain `progress.md` in the repo root** — this is your memory between iterations. After completing any checklist item, update `progress.md` immediately before committing.
-3. **One stage per iteration.** Complete the current stage fully (all checklist items + "Done when" verification), update `progress.md`, commit, then stop. The next iteration picks up the next stage.
-4. **Git is your memory layer.** Commit after every meaningful change with message format: `merdag: Stage N — <what was done>`
-5. **If a stage's "Done when" check fails**, fix it in the same iteration before moving on.
-6. **COMPLETION signal:** When ALL stages (0-5) are complete and the final acceptance criteria pass, output exactly `<promise>COMPLETE</promise>` as the last line of your response. The Ralph loop script checks for this token to exit.
-7. **Feedback loops (Stage 2+ ONLY — skip entirely during Stage 0 and Stage 1):** Before committing, run these sanity checks. Do NOT commit if any fail — fix first:
+2. **If `progress.md` shows a partially completed stage, finish the remaining checklist items in that SAME stage before advancing.** Do not skip ahead just because some boxes are already checked.
+3. **Maintain `progress.md` in the repo root** — this is your memory between iterations. After completing any checklist item, update `progress.md` immediately before committing.
+4. **One stage per iteration.** Complete the current stage fully (all checklist items + "Done when" verification), update `progress.md`, commit, then stop. The next iteration picks up the next stage.
+5. **Git is your memory layer.** Commit after every meaningful change with message format: `merdag: Stage N — <what was done>`
+6. **If a stage's "Done when" check fails**, fix it in the same iteration before moving on.
+7. **COMPLETION signal:** When ALL stages (0-5) are complete and the final acceptance criteria pass, output exactly `<promise>COMPLETE</promise>` as the last line of your response. The Ralph loop script checks for this token to exit.
+8. **Feedback loops (Stage 2+ ONLY — skip entirely during Stage 0 and Stage 1):** Before committing, run these sanity checks. Do NOT commit if any fail — fix first:
 
 ```bash
 pip install -e . 2>&1 | tail -5          # must succeed
@@ -25,14 +26,16 @@ python -m merdag --help                    # must print help
 python -c "from merdag.parser import Node, Edge, Plan; print('OK')"  # must print OK
 ```
 
-**Rule 8 — `AGENTS.md` as persistent knowledge base:** Create `AGENTS.md` in the repo root at the start of Stage 1. After each iteration, append discoveries, gotchas, and patterns to it. Sections:
+**Environment note for this repo:** The loop runs on Windows PowerShell. Before any `python` or `pip` command, activate the virtual environment with `.\.venv\Scripts\Activate.ps1`. If you switch to `cmd.exe`, use `.venv\Scripts\activate` there. When creating directories from PowerShell, use `New-Item -ItemType Directory -Force` instead of `mkdir -p`.
+
+**Rule 9 — `AGENTS.md` as persistent knowledge base:** Create `AGENTS.md` in the repo root at the start of Stage 1. After each iteration, append discoveries, gotchas, and patterns to it. Sections:
 
 - **Patterns & Conventions:** How the codebase is structured
 - **Gotchas:** Things that caused failures (e.g., "emoji regex needs no special flags in Python 3")
 - **Decisions:** Why certain approaches were chosen
 - Keep entries brief and factual — 1 line per item
 
-**Rule 9 — Cross-model review (optional):** If using multiple agents (Codex CLI primary, Claude Code backup), the reviewing agent should read the git diff from the last iteration and check for: correctness, missed checklist items, and regressions. The reviewer does NOT commit — it only appends feedback to `AGENTS.md` under a `## Review Feedback` section. The next worker iteration reads this feedback before starting.
+**Rule 10 — Cross-model review (optional):** If using multiple agents (Codex CLI primary, Claude Code backup), the reviewing agent should read the git diff from the last iteration and check for: correctness, missed checklist items, and regressions. The reviewer does NOT commit — it only appends feedback to `AGENTS.md` under a `## Review Feedback` section. The next worker iteration reads this feedback before starting.
 
 ### `progress.md` format
 
@@ -196,6 +199,8 @@ Complete each stage fully before moving to the next. Each stage must work indepe
 
 **Ralph Loop reminder:** At the start of each iteration, read `progress.md` to determine where you left off. After completing each checklist item below, check it off in `progress.md` and commit.
 
+**PowerShell reminder:** This repo runs on Windows PowerShell. Activate the virtual environment with `.\.venv\Scripts\Activate.ps1` before any Python or pip command. If `progress.md` shows a stage is already partially complete, finish that same stage before starting the next one.
+
 ### Stage 0: Environment Bootstrap (10 min)
 
 Set up the project from scratch. Assume **nothing** is pre-installed except Python 3.11+ and git.
@@ -211,9 +216,12 @@ git init
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate    # WSL/Linux/macOS
-# OR: .venv\Scripts\activate  # Windows CMD
+source .venv/bin/activate      # WSL/Linux/macOS
+.\.venv\Scripts\Activate.ps1 # Windows PowerShell
+.venv\Scripts\activate        # Windows CMD
 ```
+
+Always activate the virtual environment before any `python`, `pip`, or `merdag` command.
 
 - [ ]  **Create minimal `pyproject.toml` so `pip install -e .` works from Stage 2 onward:**
 
@@ -240,8 +248,10 @@ merdag = "merdag.cli:main"
 - [ ]  **Create package directory with empty `__init__.py`:**
 
 ```bash
-mkdir -p merdag examples templates tests
-touch merdag/__init__.py
+mkdir -p merdag examples templates tests                                      # WSL/Linux/macOS
+New-Item -ItemType Directory -Force -Path merdag, examples, templates, tests | Out-Null  # Windows PowerShell
+touch merdag/__init__.py                                                      # WSL/Linux/macOS
+New-Item -ItemType File -Force -Path merdag\__init__.py | Out-Null           # Windows PowerShell
 ```
 
 - [ ]  **Create `.gitignore`:**

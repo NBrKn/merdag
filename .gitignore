@@ -9,3 +9,5 @@ build/
 plan.mermaid
 decisions.md
 .eggs/
+logs/
+reviews/
