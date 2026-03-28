@@ -507,7 +507,7 @@ def call_llm(tier: str, system_prompt: str, user_prompt: str) -> dict:
     model = CODEX_MODEL if tier in ("codex", "human") else FAST_MODEL
     client = openai.OpenAI(
         api_key=os.environ["WANDB_API_KEY"],
-        base_url="https://api.wandb.ai/v1",
+        base_url="https://api.inference.wandb.ai/v1",
     )
     resp = client.chat.completions.create(
         model=model,

@@ -108,6 +108,16 @@ def resolve_decision(
     choice_map = {edge.label.casefold(): edge for edge in outgoing}
     chosen_edge = choice_map.get(choice.casefold())
     if chosen_edge is None:
+        # Fuzzy: if any edge label is a substring of choice (or vice versa), use it
+        choice_lower = choice.casefold()
+        for label, edge in choice_map.items():
+            if label in choice_lower or choice_lower in label:
+                chosen_edge = edge
+                break
+    if chosen_edge is None and len(outgoing) == 1:
+        # Only one outgoing edge — use it regardless of label mismatch
+        chosen_edge = outgoing[0]
+    if chosen_edge is None:
         raise ValueError(f"Choice {choice!r} not found for node {node_id}")
 
     node.status = "done"
