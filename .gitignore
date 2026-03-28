@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.venv/
+*.lock
+!merdag/**
+plan.mermaid
+decisions.md
+.eggs/
