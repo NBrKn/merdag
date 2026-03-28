@@ -174,7 +174,7 @@ def dependencies_met(plan: Plan, node_id: str) -> bool:
             continue
 
         upstream = plan.nodes.get(edge.source)
-        if upstream is None or upstream.status != "done":
+        if upstream is None or upstream.status not in {"done", "failed"}:
             return False
             
     return True

@@ -271,12 +271,15 @@ async def append_terminal_line(page: Page, text: str) -> None:
     }""", [text, css_class])
 
 
-async def reload_viewer_iframe(page: Page) -> None:
-    """Reload just the iframe src to pick up plan.mermaid changes."""
-    await page.evaluate(f"""() => {{
-        const iframe = document.getElementById('viewer-frame');
-        if (iframe) iframe.src = '{VIEWER_URL}';
-    }}""")
+async def trigger_viewer_refresh(page: Page) -> None:
+    """Trigger the viewer's built-in refresh() inside the iframe without a full reload."""
+    for frame in page.frames:
+        if f"127.0.0.1:{MERDAG_PORT}" in frame.url:
+            try:
+                await frame.evaluate("typeof refresh === 'function' && refresh()")
+            except Exception:
+                pass
+            return
 
 
 async def stream_to_terminal(
@@ -366,7 +369,7 @@ async def run_scripted_demo(
             prefix="scripted",
             page=page,
         )
-        await reload_viewer_iframe(page)
+        await trigger_viewer_refresh(page)
 
     return 0
 
@@ -470,7 +473,7 @@ async def main() -> None:
                     # Poll: reload iframe periodically to pick up plan changes
                     while simulation_process.returncode is None:
                         await asyncio.sleep(2.0)
-                        await reload_viewer_iframe(page)
+                        await trigger_viewer_refresh(page)
                         # Check if process finished
                         try:
                             await asyncio.wait_for(
@@ -491,13 +494,15 @@ async def main() -> None:
                     return_code = simulation_process.returncode
                     recorder_print(f"Simulation exited with code {return_code}.")
 
-                    # Final iframe reload to show completed state
-                    await reload_viewer_iframe(page)
+                    # Final refresh and wait for Mermaid to render
+                    await trigger_viewer_refresh(page)
+                    await asyncio.sleep(3.0)
+                    await trigger_viewer_refresh(page)
 
                 else:
                     recorder_print("Starting scripted demo steps.")
                     write_scripted_demo_files()
-                    await reload_viewer_iframe(page)
+                    await trigger_viewer_refresh(page)
                     await asyncio.sleep(2.0)
                     await wait_for_viewer_in_iframe(page, VIEWER_TIMEOUT_SECONDS)
                     return_code = await run_scripted_demo(
@@ -506,7 +511,7 @@ async def main() -> None:
                         page=page,
                     )
                     recorder_print("Scripted demo completed.")
-                    await reload_viewer_iframe(page)
+                    await trigger_viewer_refresh(page)
 
                 if return_code != 0:
                     recorder_print(f"Warning: demo exited with code {return_code} (video still saved).")
