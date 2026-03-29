@@ -76,4 +76,6 @@ def update_node_status(path: str | Path, node_id: str, status: str) -> Node:
 
 
 def append_plan_comment(path: str | Path, comment: str) -> None:
-    append_locked(path, f"%% {comment}\n")
+    lines = comment.splitlines()
+    prefixed = "\n".join(f"%% {line}" for line in lines)
+    append_locked(path, f"{prefixed}\n")

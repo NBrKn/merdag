@@ -196,6 +196,25 @@ def write_scripted_demo_files() -> None:
     DECISIONS_PATH.write_text(f"# Decisions for: {DEMO_PROMPT}\n", encoding="utf-8")
 
 
+async def wait_for_diagram_svg(page: Page, timeout_seconds: float = 15.0) -> None:
+    """Wait until the Mermaid SVG is present inside the viewer iframe."""
+    deadline = asyncio.get_running_loop().time() + timeout_seconds
+    while True:
+        for frame in page.frames:
+            if f"127.0.0.1:{MERDAG_PORT}" in frame.url:
+                try:
+                    svg = await frame.query_selector("#diagram-host svg")
+                    if svg is not None:
+                        recorder_print("Mermaid SVG confirmed rendered.")
+                        return
+                except Exception:
+                    pass
+        if asyncio.get_running_loop().time() >= deadline:
+            recorder_print("Warning: Mermaid SVG not found in iframe, proceeding anyway.")
+            return
+        await asyncio.sleep(1.0)
+
+
 async def wait_for_viewer_in_iframe(page: Page, timeout_seconds: float) -> None:
     """Wait for the merdag viewer SVG to render inside the iframe."""
     deadline = asyncio.get_running_loop().time() + timeout_seconds
@@ -388,10 +407,12 @@ async def terminate_process(process: asyncio.subprocess.Process | None, name: st
 
 
 async def main() -> None:
+    from datetime import datetime
+
     demo_mode = resolve_demo_mode()
     OUTPUT_DIR.mkdir(exist_ok=True)
-    final_video_path = OUTPUT_DIR / VIDEO_NAME
-    final_video_path.unlink(missing_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    final_video_path = OUTPUT_DIR / f"merdag_demo_{timestamp}.webm"
 
     process_environment = build_process_environment()
     creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -494,10 +515,12 @@ async def main() -> None:
                     return_code = simulation_process.returncode
                     recorder_print(f"Simulation exited with code {return_code}.")
 
-                    # Final refresh and wait for Mermaid to render
+                    # Final refresh and wait for Mermaid SVG to actually render
                     await trigger_viewer_refresh(page)
                     await asyncio.sleep(3.0)
                     await trigger_viewer_refresh(page)
+                    await asyncio.sleep(2.0)
+                    await wait_for_diagram_svg(page, timeout_seconds=15.0)
 
                 else:
                     recorder_print("Starting scripted demo steps.")

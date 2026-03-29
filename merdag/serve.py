@@ -169,11 +169,15 @@ VIEWER_HTML = """<!doctype html>
 
     async function renderPlan(newContent) {
       diagramCounter += 1;
-      diagramHost.innerHTML = '';
 
       const renderId = 'diagram-' + diagramCounter;
-      const renderResult = await mermaid.render(renderId, newContent);
-      diagramHost.innerHTML = renderResult.svg;
+      try {
+        const renderResult = await mermaid.render(renderId, newContent);
+        diagramHost.innerHTML = renderResult.svg;
+      } catch (err) {
+        // Don't clear the previous good render on parse error
+        console.warn('Mermaid parse error:', err);
+      }
     }
 
     async function refresh() {
